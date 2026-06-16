@@ -12,6 +12,7 @@ import (
 
 	"github.com/xjock/gacos-scraper/internal/config"
 	"github.com/xjock/gacos-scraper/internal/db"
+	"github.com/xjock/gacos-scraper/internal/utils"
 )
 
 // State wraps a SQLite database for persistence.
@@ -107,6 +108,59 @@ func (s *State) GetAllTasks() ([]db.Task, error) {
 // GetPendingSubmissions returns all submitted tasks awaiting download.
 func (s *State) GetPendingSubmissions() ([]db.Task, error) {
 	return s.db.GetTasksByStatus(context.Background(), "submitted")
+}
+
+// FindTaskByDates returns the first task whose date set exactly matches dates.
+func (s *State) FindTaskByDates(dates []string) (db.Task, bool) {
+	tasks, err := s.db.GetTasksByStatus(context.Background(), "")
+	if err != nil {
+		return db.Task{}, false
+	}
+	want := utils.NormalizeDates(dates)
+	for _, t := range tasks {
+		got := utils.NormalizeDates(t.Dates)
+		if sameStringSlice(want, got) {
+			return t, true
+		}
+	}
+	return db.Task{}, false
+}
+
+// UpdateDownloadTaskID associates a download with a task.
+func (s *State) UpdateDownloadTaskID(url, taskID string) error {
+	dl, err := s.db.GetDownloadByURL(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("get download: %w", err)
+	}
+	dl.TaskID = taskID
+	return s.db.UpsertDownload(context.Background(), dl)
+}
+
+// MarkTaskCompleted sets a task status to 'completed'.
+func (s *State) MarkTaskCompleted(key string) error {
+	t, err := s.db.GetTask(context.Background(), key)
+	if err != nil {
+		return fmt.Errorf("get task: %w", err)
+	}
+	t.Status = "completed"
+	return s.db.UpsertTask(context.Background(), t)
+}
+
+func sameStringSlice(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[string]int, len(a))
+	for _, v := range a {
+		m[v]++
+	}
+	for _, v := range b {
+		if m[v] == 0 {
+			return false
+		}
+		m[v]--
+	}
+	return true
 }
 
 // IsDownloaded reports whether url has been downloaded successfully.

@@ -377,14 +377,15 @@ func scanExtraction(scanner interface {
 
 // Summary holds aggregate counts.
 type Summary struct {
-	SubmissionsTotal   int
-	SubmissionsPending int
-	SubmissionsFailed  int
-	DownloadsTotal     int
-	DownloadsPending   int
-	DownloadsFailed    int
-	ExtractionsTotal   int
-	ExtractionsFailed  int
+	SubmissionsTotal     int
+	SubmissionsSubmitted int
+	SubmissionsCompleted int
+	SubmissionsFailed    int
+	DownloadsTotal       int
+	DownloadsPending     int
+	DownloadsFailed      int
+	ExtractionsTotal     int
+	ExtractionsFailed    int
 }
 
 // GetSummary returns aggregate counts.
@@ -394,8 +395,9 @@ func (d *DB) GetSummary(ctx context.Context) (*Summary, error) {
 		SELECT
 			COUNT(*),
 			COALESCE(SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0)
-		FROM tasks`).Scan(&s.SubmissionsTotal, &s.SubmissionsPending, &s.SubmissionsFailed)
+		FROM tasks`).Scan(&s.SubmissionsTotal, &s.SubmissionsSubmitted, &s.SubmissionsCompleted, &s.SubmissionsFailed)
 	if err != nil {
 		return nil, fmt.Errorf("tasks summary: %w", err)
 	}

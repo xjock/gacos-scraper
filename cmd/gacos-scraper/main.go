@@ -152,8 +152,8 @@ func usage() {
 func printStatus(st *state.State) {
 	sum := st.GetSummary()
 	fmt.Fprintf(os.Stderr, "State summary (from SQLite database):\n")
-	fmt.Fprintf(os.Stderr, "  Submissions: %d total, %d pending, %d failed\n",
-		sum.SubmissionsTotal, sum.SubmissionsPending, sum.SubmissionsFailed)
+	fmt.Fprintf(os.Stderr, "  Submissions: %d total, %d submitted, %d completed, %d failed\n",
+		sum.SubmissionsTotal, sum.SubmissionsSubmitted, sum.SubmissionsCompleted, sum.SubmissionsFailed)
 	fmt.Fprintf(os.Stderr, "  Downloads:   %d total, %d pending, %d failed\n",
 		sum.DownloadsTotal, sum.DownloadsPending, sum.DownloadsFailed)
 	fmt.Fprintf(os.Stderr, "  Extractions: %d total, %d failed\n",

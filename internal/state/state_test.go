@@ -85,8 +85,8 @@ func TestSummary(t *testing.T) {
 	if sum.SubmissionsTotal != 2 {
 		t.Fatalf("expected 2 submissions, got %d", sum.SubmissionsTotal)
 	}
-	if sum.SubmissionsPending != 1 {
-		t.Fatalf("expected 1 pending submission, got %d", sum.SubmissionsPending)
+	if sum.SubmissionsSubmitted != 1 {
+		t.Fatalf("expected 1 submitted submission, got %d", sum.SubmissionsSubmitted)
 	}
 	if sum.SubmissionsFailed != 1 {
 		t.Fatalf("expected 1 failed submission, got %d", sum.SubmissionsFailed)

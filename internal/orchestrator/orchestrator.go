@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -212,13 +213,21 @@ func (o *Orchestrator) pollDownloadExtract(ctx context.Context) error {
 		seenUIDs[urlToUID[u]] = struct{}{}
 
 		if o.cfg.Output.Extract {
-			if err := o.extractArchive(destPath); err != nil {
+			files, err := o.extractArchive(destPath)
+			if err != nil {
 				slog.Error("extraction failed", "path", destPath, "error", err)
 				if recErr := o.st.RecordExtraction(destPath, "", nil, "failed", err.Error()); recErr != nil {
 					slog.Error("failed to record extraction failure", "error", recErr)
 				}
 				continue
 			}
+			// Try to link this download/extraction to the corresponding task by dates.
+			if err := o.linkDownloadToTask(u, files); err != nil {
+				slog.Warn("failed to link download to task", "url", u, "error", err)
+			}
+		} else {
+			// If not extracting, still try to link by filename pattern in archive name.
+			_ = o.linkDownloadToTask(u, []string{destPath})
 		}
 	}
 
@@ -236,10 +245,10 @@ func (o *Orchestrator) pollDownloadExtract(ctx context.Context) error {
 	return nil
 }
 
-func (o *Orchestrator) extractArchive(srcPath string) error {
+func (o *Orchestrator) extractArchive(srcPath string) ([]string, error) {
 	if o.st.IsExtracted(srcPath) {
 		slog.Info("skipping already extracted archive", "path", srcPath)
-		return nil
+		return nil, nil
 	}
 
 	baseName := strings.TrimSuffix(filepath.Base(srcPath), ".tar.gz")
@@ -247,14 +256,54 @@ func (o *Orchestrator) extractArchive(srcPath string) error {
 
 	files, err := extract.Extract(srcPath, destDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if recErr := o.st.RecordExtraction(srcPath, destDir, files, "extracted", ""); recErr != nil {
-		return fmt.Errorf("record extraction: %w", recErr)
+		return nil, fmt.Errorf("record extraction: %w", recErr)
 	}
 	slog.Info("extracted archive", "path", srcPath, "files", len(files), "to", destDir)
+	return files, nil
+}
+
+// dateFromFileRe extracts YYYYMMDD dates from filenames such as 20240101.ztd.tif.
+var dateFromFileRe = regexp.MustCompile(`(\d{8})\.ztd`)
+
+// linkDownloadToTask tries to associate a downloaded archive with the submission
+// task that produced it by matching dates found in the extracted filenames.
+func (o *Orchestrator) linkDownloadToTask(url string, files []string) error {
+	dates := extractDatesFromFiles(files)
+	if len(dates) == 0 {
+		return nil
+	}
+	task, ok := o.st.FindTaskByDates(dates)
+	if !ok {
+		return fmt.Errorf("no task matches dates %v", dates)
+	}
+	if err := o.st.UpdateDownloadTaskID(url, task.ID); err != nil {
+		return fmt.Errorf("update download task_id: %w", err)
+	}
+	if err := o.st.MarkTaskCompleted(task.ID); err != nil {
+		return fmt.Errorf("mark task completed: %w", err)
+	}
+	slog.Info("linked download to task", "url", url, "task", task.ID)
 	return nil
+}
+
+func extractDatesFromFiles(files []string) []string {
+	seen := make(map[string]struct{})
+	var dates []string
+	for _, f := range files {
+		matches := dateFromFileRe.FindStringSubmatch(filepath.Base(f))
+		if len(matches) == 2 {
+			d := matches[1]
+			if _, ok := seen[d]; !ok {
+				seen[d] = struct{}{}
+				dates = append(dates, d)
+			}
+		}
+	}
+	return dates
 }
 
 func filenameFromURL(raw string) string {
