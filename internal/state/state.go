@@ -185,19 +185,27 @@ func (s *State) migrateFromJSON(path string) error {
 	}
 	ctx := context.Background()
 	for _, sub := range legacy.Submissions {
+		// Do not overwrite an existing task; legacy JSON may lack params.
+		if _, err := s.db.GetTask(ctx, sub.Key); err == nil {
+			continue
+		}
 		t := &db.Task{
-			ID:        sub.Key,
-			Dates:     sub.Dates,
-			Status:    sub.Status,
+			ID:          sub.Key,
+			Dates:       sub.Dates,
+			Status:      sub.Status,
 			SubmittedAt: sub.SubmittedAt,
-			Retries:   sub.Retries,
-			LastError: sub.LastError,
+			Retries:     sub.Retries,
+			LastError:   sub.LastError,
 		}
 		if err := s.db.UpsertTask(ctx, t); err != nil {
 			return fmt.Errorf("migrate task %s: %w", sub.Key, err)
 		}
 	}
 	for _, d := range legacy.Downloads {
+		// Do not overwrite an existing download.
+		if _, err := s.db.GetDownloadByURL(ctx, d.URL); err == nil {
+			continue
+		}
 		dl := &db.Download{
 			URL:          d.URL,
 			FilePath:     d.FilePath,
@@ -212,6 +220,10 @@ func (s *State) migrateFromJSON(path string) error {
 		}
 	}
 	for _, e := range legacy.Extractions {
+		// Do not overwrite an existing extraction.
+		if _, err := s.db.GetExtractionByArchivePath(ctx, e.ArchivePath); err == nil {
+			continue
+		}
 		ex := &db.Extraction{
 			ArchivePath: e.ArchivePath,
 			ExtractedTo: e.ExtractedTo,

@@ -5,11 +5,14 @@
 # Configuration with credentials
 config.yaml
 
-# State database
+# State database and legacy JSON backups
 state.db
 state.db-*
 state.json
-state.json.backup
+state.json.*
+
+# Diagnostic / local scripts
+/scripts/
 
 # Downloads
 /downloads/

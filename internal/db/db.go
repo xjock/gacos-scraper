@@ -276,6 +276,11 @@ func (d *DB) GetDownloadByURL(ctx context.Context, url string) (*Download, error
 
 // UpsertDownload inserts or updates a download.
 func (d *DB) UpsertDownload(ctx context.Context, dl *Download) error {
+	// If ID is 0, let SQLite auto-increment. Use NULL for id in that case.
+	var id interface{}
+	if dl.ID != 0 {
+		id = dl.ID
+	}
 	_, err := d.db.ExecContext(ctx, `
 		INSERT INTO downloads (id, task_id, url, file_path, size_bytes, status, downloaded_at, retries, last_error)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -287,7 +292,7 @@ func (d *DB) UpsertDownload(ctx context.Context, dl *Download) error {
 			downloaded_at = excluded.downloaded_at,
 			retries = excluded.retries,
 			last_error = excluded.last_error`,
-		dl.ID, dl.TaskID, dl.URL, dl.FilePath, dl.SizeBytes, dl.Status,
+		id, dl.TaskID, dl.URL, dl.FilePath, dl.SizeBytes, dl.Status,
 		sqlTime(dl.DownloadedAt), dl.Retries, dl.LastError)
 	return err
 }
@@ -326,6 +331,11 @@ func (d *DB) UpsertExtraction(ctx context.Context, e *Extraction) error {
 	if err != nil {
 		return fmt.Errorf("marshal files: %w", err)
 	}
+	// If ID is 0, let SQLite auto-increment.
+	var id interface{}
+	if e.ID != 0 {
+		id = e.ID
+	}
 	_, err = d.db.ExecContext(ctx, `
 		INSERT INTO extractions (id, download_id, archive_path, extracted_to, files, status, extracted_at, last_error)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -336,7 +346,7 @@ func (d *DB) UpsertExtraction(ctx context.Context, e *Extraction) error {
 			status = excluded.status,
 			extracted_at = excluded.extracted_at,
 			last_error = excluded.last_error`,
-		e.ID, e.DownloadID, e.ArchivePath, e.ExtractedTo, string(filesJSON), e.Status,
+		id, e.DownloadID, e.ArchivePath, e.ExtractedTo, string(filesJSON), e.Status,
 		sqlTime(e.ExtractedAt), e.LastError)
 	return err
 }
