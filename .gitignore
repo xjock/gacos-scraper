@@ -1,3 +1,7 @@
+# HTML reference snapshots
+/html/
+/html_*/
+
 # Configuration with credentials
 config.yaml
 
