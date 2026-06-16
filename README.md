@@ -57,41 +57,28 @@ cp config.example.yaml config.yaml
 
 ## 使用
 
-### 持续运行（默认）
+本工具**只提供守护进程模式**：启动后会先提交所有日期组，然后一直检查邮箱，收到 GACOS 下载邮件就立即下载并解压，直到按 `Ctrl+C` 退出。
 
 ```bash
 ./gacos-scraper.exe --config config.yaml
 ```
 
-程序会一直运行，**提交和邮箱轮询是并行执行的**：主线程负责提交所有日期组，另一个线程持续检查邮箱，收到 GACOS 下载邮件就立即下载并解压。直到按 `Ctrl+C` 退出。
-
-### 查看当前进度
-
-```bash
-./gacos-scraper.exe --config config.yaml --status
-```
-
-输出示例：
-
-```
-State summary:
-  Submissions: 5 total, 5 pending, 0 failed
-  Downloads:   0 total, 0 pending, 0 failed
-  Extractions: 0 total, 0 failed
-```
-
-### 只运行一次
-
-```bash
-./gacos-scraper.exe --config config.yaml --once
-```
-
-适合配合计划任务（cron / Windows 任务计划程序）定期执行。
+提交和邮箱轮询是**并行执行**的，因此前面几组的下载邮件到了就能立刻处理，不用等所有组都提交完。
 
 ### 调试日志
 
 ```bash
 ./gacos-scraper.exe --config config.yaml --verbose
+```
+
+### 查看任务状态
+
+程序本身不再提供状态查看命令。如需查看历史任务，直接用 SQLite 命令行查询 `state.db`：
+
+```bash
+sqlite3 state.db "SELECT * FROM tasks;"
+sqlite3 state.db "SELECT * FROM downloads;"
+sqlite3 state.db "SELECT * FROM extractions;"
 ```
 
 ## 输出目录结构
