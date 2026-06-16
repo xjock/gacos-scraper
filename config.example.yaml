@@ -1,0 +1,59 @@
+# GACOS 自动下载器配置示例
+# 复制此文件为 config.yaml 并填入真实参数
+
+gacos:
+  # 目标区域经纬度边界（度）
+  north: 40.0
+  south: 39.0
+  west: 115.0
+  east: 116.5
+
+  # 数据获取时间（UTC），对应 SAR 成像时间
+  hour: 12
+  minute: 0
+
+  # 日期列表，格式 YYYYMMDD；程序会自动按每 20 个一组切分提交
+  dates:
+    - "20240101"
+    - "20240113"
+    - "20240125"
+    # - ...
+
+  # 输出格式：2 = GeoTIFF（推荐），1 = 二进制网格
+  type: 2
+
+  # GACOS 处理完成后发送通知的邮箱
+  email: "your-email@example.com"
+
+imap:
+  # IMAP 服务器地址与端口
+  # 常用邮箱：
+  #   163:  imap.163.com:993   （密码需填“授权码”，不是网页登录密码）
+  #   Gmail: imap.gmail.com:993 （密码需填“应用专用密码”）
+  #   QQ:   imap.qq.com:993     （密码需填“授权码”）
+  #   Outlook: outlook.office365.com:993
+  server: "imap.163.com:993"
+  username: "yourname@163.com"
+  password: "your-163-authorization-code"  # 163 授权码，不是网页密码
+  use_tls: true
+  skip_tls_verify: false      # 若证书验证失败（如部分 163 环境），设为 true
+  mailbox: "INBOX"
+
+  # 可选：只处理来自某发件人 / 主题的邮件
+  sender_filter: ""
+  subject_filter: ""
+
+output:
+  # 下载与解压目录，可设为 G:\satdata 等项目目录
+  dir: "./downloads"
+  staging_subdir: "staging"   # 存放原始 .tar.gz
+  extract_subdir: "extracted" # 存放解压后的文件
+  extract: true               # 下载后是否自动解压
+
+polling:
+  interval: "5m"              # 检查邮箱间隔
+  download_timeout: "30m"     # 单个文件下载超时
+  max_retries: 3              # GACOS 提交失败重试次数
+
+state:
+  db_file: "./state.db"        # SQLite 状态数据库，保存任务及进度

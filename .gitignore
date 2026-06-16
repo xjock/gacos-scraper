@@ -1,0 +1,40 @@
+# Configuration with credentials
+config.yaml
+
+# State database
+state.db
+state.db-*
+state.json
+state.json.backup
+
+# Downloads
+/downloads/
+/staging/
+/extracted/
+
+# Build artifacts
+gacos-scraper.exe
+gacos-scraper
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go build cache
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+response.html
+*.test
+*.out
