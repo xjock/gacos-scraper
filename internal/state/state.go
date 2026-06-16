@@ -99,6 +99,11 @@ func (s *State) RecordSubmission(key string, cfg *config.GacosConfig, dates []st
 	return s.db.UpsertTask(context.Background(), t)
 }
 
+// GetAllTasks returns every tracked submission task.
+func (s *State) GetAllTasks() ([]db.Task, error) {
+	return s.db.GetTasksByStatus(context.Background(), "")
+}
+
 // GetPendingSubmissions returns all submitted tasks awaiting download.
 func (s *State) GetPendingSubmissions() ([]db.Task, error) {
 	return s.db.GetTasksByStatus(context.Background(), "submitted")
