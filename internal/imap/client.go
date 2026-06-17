@@ -71,7 +71,9 @@ func (c *Client) Poll(ctx context.Context, since time.Time) ([]string, map[strin
 	}
 
 	criteria := imap.NewSearchCriteria()
-	criteria.WithoutFlags = []string{imap.SeenFlag}
+	// Search all emails since the given date, not just unseen ones.
+	// The orchestrator uses URL deduplication to avoid re-downloading
+	// archives that have already been processed.
 	if !since.IsZero() {
 		criteria.Since = since
 	}
